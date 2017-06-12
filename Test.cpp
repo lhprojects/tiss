@@ -282,7 +282,12 @@ int main()
 		con.disconnect();
 		return 0;
 	});
-	s(a, a);
+	s(a);
+	s(a, [](int a) {
+		printf("%d\n", a);
+	});
+	s.invoke_and_get_last_result(a, a);
+
 	s(a);
 
 	test_invoke();

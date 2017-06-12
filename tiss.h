@@ -378,6 +378,7 @@ namespace tiss {
 
 		// VS won't inline here
 		// it's good, because there are many invocation points!
+		
 		void operator()(Args... args) const
 		{
 			auto *end = &fConnectionBodies;
@@ -388,23 +389,24 @@ namespace tiss {
 
 				if (body.fConnected) {
 					details::auto_lock<Return, Args...> auto_lock(body);  //prevent unlink from list
-					// impossible inline
+																		  // impossible inline
 					body.Invoke(std::forward<Args>(args)...);
 					p = p->fNext;
 				}
 
 			}
 		}
+		
 
-		std::enable_if_t< !std::is_same<Return, void>::value,
-			void> operator()(Args... args,
+		template<class = std::enable_if_t< !std::is_same<Return, void>::value, void>>
+		bool invoke_and_get_last_result(Args... args,
 				std::conditional_t<std::is_same<Return, void>::value, int, Return> &last) const
 		{
 			auto const *end = &fConnectionBodies;
 			auto p = fConnectionBodies.fNext;
 
 			for (; p != end && !static_cast<connection_body_type*>(p)->fConnected; p = p->fNext) { }
-			if (p == end) return;
+			if (p == end) return false;
 
 			for (;;)
 			{
@@ -417,7 +419,28 @@ namespace tiss {
 				for (; p != end && !static_cast<connection_body_type*>(p)->fConnected; p = p->fNext) {}
 				if (p == end) {
 					last = std::move(tmp);
-					break;
+					return false;
+				}
+
+			}
+		}
+
+
+		template<class ResultHanler, class = decltype(std::declval<ResultHanler&>()(std::declval<Return>())) >
+		void operator()(Args... args,
+				ResultHanler &handler) const
+		{
+			auto *end = &fConnectionBodies;
+			for (auto p = fConnectionBodies.fNext; p != end; )
+			{
+				// down cast
+				connection_body_type &body = static_cast<connection_body_type &>(*p);
+
+				if (body.fConnected) {
+					details::auto_lock<Return, Args...> auto_lock(body);  //prevent unlink from list
+																		  // impossible inline
+					handler(body.Invoke(std::forward<Args>(args)...));
+					p = p->fNext;
 				}
 
 			}
