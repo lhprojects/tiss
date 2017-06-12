@@ -5,6 +5,7 @@
 #include <memory>
 #include <type_traits>
 #include <functional>
+#include <tuple>
 
 namespace tiss {
 
@@ -272,9 +273,135 @@ namespace tiss {
 		linked_connection_body_base *fBody;
 	};
 
-	template<class Signature, class Return, class... Args>
+	template<class Result, class... Args>
+	struct signal_impl;
+
+
+	template<class Signature>
+	struct _Get_Tuple;
+
+	template<class Return, class... Args>
+	struct _Get_Tuple< Return(Args...) >
+	{
+		using type = std::tuple< Args... >;
+	};
+
+	template<class Result, class... Args>
+	class _Result_iterator_impl
+	{
+	public:
+		typedef Result _Signature(Args...);
+		using _Signal = signal_impl<Result, Args...>;
+		using _Node = details::linked;
+		using _Body = connection_body<Result, Args...>;
+		using _Tuple = std::tuple<Args...>;
+
+		_Node *_fNode;
+		_Node const *_fHead;
+		_Tuple *_fArgs;
+		_Result_iterator_impl(
+			_Node *node,
+			_Node const *head,
+			_Tuple *args) 
+			: _fNode(node), _fHead(head), _fArgs(args)
+		{
+		}
+
+		//static_assert(std::is_copy_constructible_v<_Result_iterator_impl>);
+		//static_assert(std::is_copy_assignable_v<_Result_iterator_impl>);
+
+		bool operator!=(_Result_iterator_impl const &r) const
+		{
+			return _fNode != r._fNode;
+		}
+
+		_Result_iterator_impl &operator++()
+		{
+			_fNode = _fNode->fNext;
+			for (; _fNode != _fHead && !static_cast<_Body *>(_fNode)->fConnected; _fNode = _fNode->fNext) { }
+			return *this;
+		}
+
+		_Result_iterator_impl operator++(int)
+		{
+			_Result_iterator_impl t = *this
+			++(*this);
+			return t;
+		}
+
+		template<std::size_t... I>
+		Result _Invoke(_Body &body, _Tuple *args, std::index_sequence<I>...) const
+		{
+			// make a copy and invoke
+			return body.Invoke(std::forward<Args>(std::get<I>(_Tuple(*args))...)...);
+		}
+
+		Result operator*() const
+		{
+			auto &body = static_cast<_Body &>(*_fNode);
+			return _Invoke(body, _fArgs, std::make_index_sequence<sizeof...(Args)>());
+		}
+	};
+
+	template<class Signature>
+	struct _Get_result_iterator_impl;
+
+	template<class Return, class... Args>
+	struct _Get_result_iterator_impl<Return(Args...)> {
+		using type = _Result_iterator_impl<Return, Args...>;
+	};
+
+	template<class Signature>
+	struct result_iterator : _Get_result_iterator_impl<Signature>::type
+	{
+		using _MyBase = typename _Get_result_iterator_impl<Signature>::type;
+		using _Signal = typename _MyBase::_Signal;
+		using _Node = details::linked;
+		using _Body = typename _MyBase::_Body;
+		using _Tuple = typename _MyBase::_Tuple;
+
+		result_iterator(
+			_Node *node,
+			_Node const *head,
+			_Tuple *args) : _MyBase(node, head, args)
+		{
+		}
+	};
+
+	template<class Signature>
+	struct result_range
+	{
+		using _Tuple = typename _Get_Tuple<Signature>::type;
+		using _Iter = result_iterator<Signature>;
+		using _Node = details::linked;
+
+		_Tuple _fTuple;
+		_Iter _fBegin;
+		_Iter _fEnd;
+
+		template<class... Args1>
+		result_range(_Node *b, _Node const *e, Args1&&... args) :
+			_fTuple(std::forward<Args1>(args)...),
+			_fBegin(b, e, &_fTuple), 
+			_fEnd((_Node*)e, e, &_fTuple)
+		{
+		}
+
+		_Iter begin() const
+		{
+			return _fBegin;
+		}
+
+		_Iter end() const
+		{
+			return _fEnd;
+		}
+	};
+
+	template<class Return, class... Args>
 	struct signal_impl {
 	public:
+		typedef Return Signature (Args...);
 		using connection_type = connection;
 		using connection_body_type = connection_body<Return, Args...>;
 		using connection_bodies_type = details::linked;
@@ -460,6 +587,16 @@ namespace tiss {
 			}
 		}
 
+		result_range<Signature> invoke_and_get_range(Args... args) const
+		{
+			auto p = fConnectionBodies.fNext;
+			auto end = &fConnectionBodies;
+			for (; p != end && !static_cast<connection_body_type*>(p)->fConnected; p = p->fNext) {}
+
+			// move if possible
+			return result_range<Signature>(p, end, std::forward<Args>(args)...);
+		}
+
 	};
 
 	template<class Signature>
@@ -467,7 +604,7 @@ namespace tiss {
 
 	template<class Return, class... Args>
 	struct get_signal_impl<Return(Args...)> {
-		using type = signal_impl<Return(Args...), Return, Args...>;
+		using type = signal_impl<Return, Args...>;
 	};
 
 	template<class Signature>

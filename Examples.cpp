@@ -107,6 +107,12 @@ void example_get_result()
 		++i;
 	});
 
+	i = 0;
+	for (auto b : s.invoke_and_get_range(a)) {
+		printf("%dth result %d\n", i, b);
+		++i;
+	}
+
 }
 
 int main() {

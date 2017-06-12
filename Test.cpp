@@ -71,6 +71,7 @@ void test_invoke2()
 	namespace cr = std::chrono;
 
 	{
+		printf("boost.signal2\n");
 		auto t0 = cr::high_resolution_clock::now();
 
 		boost::signals2::signal<void(int, int&)> signal;
@@ -87,6 +88,7 @@ void test_invoke2()
 		std::cout << cr::duration_cast<cr::milliseconds>(t1 - t0).count() << std::endl;
 	}
 	{
+		printf("tiss.signal\n");
 		auto t0 = cr::high_resolution_clock::now();
 
 		tiss::signal<void(int, int&)> signal;
@@ -102,6 +104,31 @@ void test_invoke2()
 		auto t1 = cr::high_resolution_clock::now();
 		std::cout << cr::duration_cast<cr::milliseconds>(t1 - t0).count() << std::endl;
 	}
+
+	{
+		printf("tiss.signal.invoke_and_get_range\n");
+		auto t0 = cr::high_resolution_clock::now();
+
+		tiss::signal<void(int, int&)> signal;
+		signal.connect(foo);
+		signal.connect(foo);
+		auto sum = 0;
+		for (int i = 0; i < 10000000; ++i) {
+			int a;
+			auto rng = signal.invoke_and_get_range(i, a);
+			tiss::_Get_Tuple<void(int, int&)>::type;
+			auto b = rng.begin();
+			auto e = rng.end();
+			for (; b != e; ++b) {
+			}
+			sum += a;
+		}
+
+		auto t1 = cr::high_resolution_clock::now();
+		std::cout << cr::duration_cast<cr::milliseconds>(t1 - t0).count() << std::endl;
+	}
+
+	printf("raw\n");
 	{
 		auto t0 = cr::high_resolution_clock::now();
 
@@ -146,6 +173,19 @@ void test_heavy_invoke()
 		std::string str = "123456789012345678901234567890";
 		for (int i = 0; i < 10000000; ++i) {
 			signal(str);
+		}
+
+		auto t1 = cr::high_resolution_clock::now();
+		std::cout << cr::duration_cast<cr::milliseconds>(t1 - t0).count() << std::endl;
+	}
+	{
+		auto t0 = cr::high_resolution_clock::now();
+
+		tiss::signal<std::string(std::string const &str)> signal;
+		signal.connect([](std::string const &str) { return str; });
+		std::string str = "123456789012345678901234567890";
+		for (int i = 0; i < 10000000; ++i) {
+			for(auto &&str : signal.invoke_and_get_range(str)) { }
 		}
 
 		auto t1 = cr::high_resolution_clock::now();
