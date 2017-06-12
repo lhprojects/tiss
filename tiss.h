@@ -403,24 +403,23 @@ namespace tiss {
 			auto const *end = &fConnectionBodies;
 			auto p = fConnectionBodies.fNext;
 
-			for (; p != end && p->fConnected; p = p->fNext) { }
-			if (p == end) break;
+			for (; p != end && !static_cast<connection_body_type*>(p)->fConnected; p = p->fNext) { }
+			if (p == end) return;
 
 			for (;;)
 			{
 				connection_body_type &body = static_cast<connection_body_type &>(*p);
 
-				{
-					details::auto_lock<Return, Args...> auto_lock(body); //prevent unlink from list
-					auto tmp = body.Invoke(std::forward<Args>(args)...);
-					p = p->fNext;     // get next
-				}
+				details::auto_lock<Return, Args...> auto_lock(body); //prevent unlink from list
+				auto tmp = body.Invoke(std::forward<Args>(args)...);
+				p = p->fNext;     // get next
 
-				for (; p != end && p->fConnected; p = p->fNext) {}
+				for (; p != end && !static_cast<connection_body_type*>(p)->fConnected; p = p->fNext) {}
 				if (p == end) {
 					last = std::move(tmp);
 					break;
 				}
+
 			}
 		}
 

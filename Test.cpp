@@ -282,7 +282,7 @@ int main()
 		con.disconnect();
 		return 0;
 	});
-	s(a);
+	s(a, a);
 	s(a);
 
 	test_invoke();
