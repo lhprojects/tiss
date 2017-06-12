@@ -115,10 +115,54 @@ void example_get_result()
 
 }
 
+
+struct Object {
+	Object() { printf("default cotr\n"); }
+	Object(Object const &o) { printf("copy cotr\n"); }
+	Object(Object &&o) { printf("move cotr\n"); }
+	Object& operator=(Object const &o) { printf("copy =\n"); }
+	Object& operator=(Object &&o) { printf("move =\n"); }
+	~Object() { printf("~\n"); }
+};
+
+
+void example_safe_forward()
+{
+	tiss::signal<int(std::string)> s;
+
+	s.connect([&](std::string str) {
+		printf("connection1, %s\n", str.c_str());
+		return 0;
+	});
+	s.connect([&](std::string str) {
+		printf("connection2, %s\n", str.c_str());
+		return 0;
+	});
+
+	s("abc");
+}
+
+void example_safe_forward2()
+{
+	tiss::signal<int(Object)> s;
+
+	s.connect([&](Object obj) {
+		printf("connection1\n");
+		return 0;
+	});
+	s.connect([&](Object str) {
+		printf("connection2\n");
+		return 0;
+	});
+
+	s(Object());
+}
+
 int main() {
 	example_connect();
 	example_disconnect();
 	example_get_result();
-
+	example_safe_forward();
+	example_safe_forward2();
 }
 
