@@ -236,60 +236,8 @@ void test_heavy_lambda_connect()
 
 }
 
-
-
-struct Com {
-
-	Com(int a) { }
-	int operator()(int &x) {
-		printf("%d -> %d\n", x, x+1);
-		x += 1;
-		return 1;
-	}
-};
 int main()
 {
-
-	using namespace std::placeholders;
-	tiss::signal<int(int&)> s;
-
-
-	s.connect([&](int &x) { 
-		printf("%d -> %d\n", x, x + 1);
-		x += 1;
-
-		s.connect_bind([&](int const &, int &x) {
-			printf("%d -> %d\n", x, x + 1);
-			x += 1;
-
-			s.connect_emplace<Com>(1);
-
-			return 1;
-		}, 1, std::placeholders::_1);
-
-
-		return 1;
-	});
-
-	int a = 0;
-	s(a);
-	s.disconnect_all();
-	tiss::connection con;
-
-
-	con = s.connect([&] (int &) {
-		printf("disconnect\n");
-		con.disconnect();
-		return 0;
-	});
-	s(a);
-	s(a, [](int a) {
-		printf("%d\n", a);
-	});
-	s.invoke_and_get_last_result(a, a);
-
-	s(a);
-
 	test_invoke();
 	test_invoke2();
 	test_heavy_invoke();
