@@ -376,6 +376,20 @@ namespace tiss {
 			}
 		}
 
+		size_t num_connections()
+		{
+			size_t num = 0;
+			auto *end = &fConnectionBodies;
+			for (auto p = fConnectionBodies.fNext; p != end; )
+			{
+				// down cast
+				connection_body_type &body = static_cast<connection_body_type &>(*p);
+				p = p->fNext;
+				if (body.fConnected) num += 1;
+			}
+			return num;
+		}
+
 		// VS won't inline here
 		// it's good, because there are many invocation points!
 		

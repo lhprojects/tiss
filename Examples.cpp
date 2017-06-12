@@ -75,7 +75,7 @@ void example_disconnect()
 	s(a);
 	printf("the first  connection status %d\n", con1.connected());
 	printf("the second connection status %d\n", con2.connected());
-	s(a);
+	printf("num of connections %d\n", (int)s.num_connections());
 }
 
 void example_get_result()
