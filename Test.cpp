@@ -260,17 +260,17 @@ void test_invoke10()
 
 }
 
-void test_heavy_invoke()
+void test_heavy_para_invoke()
 {
 
-	printf("test_heavy_invoke\n");
+	printf("test_heavy_para_invoke\n");
 	namespace cr = std::chrono;
 
 	{
 		auto t0 = cr::high_resolution_clock::now();
 
-		boost::signals2::signal<std::string(std::string const &str)> signal;
-		signal.connect([](std::string const &str) { return str; });
+		boost::signals2::signal<std::string(std::string str)> signal;
+		signal.connect([](std::string str) { return str; });
 		std::string str = "123456789012345678901234567890";
 
 		for (int i = 0; i < 10000000; ++i) {
@@ -283,8 +283,8 @@ void test_heavy_invoke()
 	{
 		auto t0 = cr::high_resolution_clock::now();
 
-		tiss::signal<std::string(std::string const &str)> signal;
-		signal.connect([](std::string const &str) { return str; });
+		tiss::signal<std::string(std::string str)> signal;
+		signal.connect([](std::string str) { return str; });
 		std::string str = "123456789012345678901234567890";
 		for (int i = 0; i < 10000000; ++i) {
 			signal(str);
@@ -296,8 +296,8 @@ void test_heavy_invoke()
 	{
 		auto t0 = cr::high_resolution_clock::now();
 
-		tiss::signal<std::string(std::string const &str)> signal;
-		signal.connect([](std::string const &str) { return str; });
+		tiss::signal<std::string(std::string str)> signal;
+		signal.connect([](std::string str) { return str; });
 		std::string str = "123456789012345678901234567890";
 		for (int i = 0; i < 10000000; ++i) {
 			for(auto &&str : signal.emit_and_get_range(str)) { }
@@ -310,7 +310,7 @@ void test_heavy_invoke()
 		auto t0 = cr::high_resolution_clock::now();
 
 		std::string str = "123456789012345678901234567890";
-		auto copy_str = [](std::string const &str) { return str; };
+		auto copy_str = [](std::string str) { return str; };
 		for (int i = 0; i < 10000000; ++i) {
 			copy_str(str);
 		}
@@ -396,7 +396,7 @@ int main()
 	test_invoke();
 	test_invoke2();
 	test_invoke10();
-	test_heavy_invoke();
+	test_heavy_para_invoke();
 	test_connect();
 	test_heavy_lambda_connect();
 	return 0;
