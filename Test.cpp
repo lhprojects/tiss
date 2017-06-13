@@ -136,6 +136,121 @@ void test_invoke2()
 		for (int i = 0; i < 10000000; ++i) {
 			int a;
 			foo(i, a);
+			foo(i, a);
+			sum += a;
+		}
+
+		auto t1 = cr::high_resolution_clock::now();
+		std::cout << cr::duration_cast<cr::milliseconds>(t1 - t0).count() << std::endl;
+	}
+
+}
+
+void test_invoke10()
+{
+
+	printf("test_invoke10\n");
+	namespace cr = std::chrono;
+
+	{
+		printf("boost.signal2\n");
+		auto t0 = cr::high_resolution_clock::now();
+
+		boost::signals2::signal<void(int, int&)> signal;
+		signal.connect(foo);
+		signal.connect(foo);
+		signal.connect(foo);
+		signal.connect(foo);
+		signal.connect(foo);
+		signal.connect(foo);
+		signal.connect(foo);
+		signal.connect(foo);
+		signal.connect(foo);
+		signal.connect(foo);
+		auto sum = 0;
+		for (int i = 0; i < 10000000; ++i) {
+			int a;
+			signal(i, a);
+			sum += a;
+		}
+
+		auto t1 = cr::high_resolution_clock::now();
+		std::cout << cr::duration_cast<cr::milliseconds>(t1 - t0).count() << std::endl;
+	}
+	{
+		printf("tiss.signal\n");
+		auto t0 = cr::high_resolution_clock::now();
+
+		tiss::signal<void(int, int&)> signal;
+		signal.connect(foo);
+		signal.connect(foo);
+		signal.connect(foo);
+		signal.connect(foo);
+		signal.connect(foo);
+		signal.connect(foo);
+		signal.connect(foo);
+		signal.connect(foo);
+		signal.connect(foo);
+		signal.connect(foo);
+		auto sum = 0;
+		for (int i = 0; i < 10000000; ++i) {
+			int a;
+			signal(i, a);
+			sum += a;
+		}
+
+		auto t1 = cr::high_resolution_clock::now();
+		std::cout << cr::duration_cast<cr::milliseconds>(t1 - t0).count() << std::endl;
+	}
+
+	{
+		printf("tiss.signal.invoke_and_get_range\n");
+		auto t0 = cr::high_resolution_clock::now();
+
+		tiss::signal<void(int, int&)> signal;
+		signal.connect(foo);
+		signal.connect(foo);
+		signal.connect(foo);
+		signal.connect(foo);
+		signal.connect(foo);
+		signal.connect(foo);
+		signal.connect(foo);
+		signal.connect(foo);
+		signal.connect(foo);
+		signal.connect(foo);
+		auto sum = 0;
+		for (int i = 0; i < 10000000; ++i) {
+			int a;
+			auto rng = signal.invoke_and_get_range(i, a);
+			tiss::_Get_Tuple<void(int, int&)>::type;
+			auto b = rng.begin();
+			auto e = rng.end();
+			for (; b != e; ++b) {
+			}
+			sum += a;
+		}
+
+		auto t1 = cr::high_resolution_clock::now();
+		std::cout << cr::duration_cast<cr::milliseconds>(t1 - t0).count() << std::endl;
+	}
+
+	printf("raw\n");
+	{
+		auto t0 = cr::high_resolution_clock::now();
+
+		auto sum = 0;
+		for (int i = 0; i < 10000000; ++i) {
+			int a;
+			foo(i, a);
+			foo(i, a);
+			foo(i, a);
+			foo(i, a);
+			foo(i, a);
+			foo(i, a);
+			foo(i, a);
+			foo(i, a);
+			foo(i, a);
+			foo(i, a);
 			sum += a;
 		}
 
@@ -280,6 +395,7 @@ int main()
 {
 	test_invoke();
 	test_invoke2();
+	test_invoke10();
 	test_heavy_invoke();
 	test_connect();
 	test_heavy_lambda_connect();

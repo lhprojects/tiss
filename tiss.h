@@ -531,7 +531,8 @@ namespace tiss {
 				if (body.fConnected) {
 					details::auto_lock<Return, Args...> auto_lock(body);  //prevent unlink from list
 																		  // impossible inline
-					body.Invoke(std::forward<Args>(args)...);
+					// copy before you forward
+					body.Invoke(std::forward<Args>(Args(args))...);
 					p = p->fNext;
 				}
 
@@ -554,7 +555,7 @@ namespace tiss {
 				connection_body_type &body = static_cast<connection_body_type &>(*p);
 
 				details::auto_lock<Return, Args...> auto_lock(body); //prevent unlink from list
-				auto tmp = body.Invoke(std::forward<Args>(args)...);
+				auto tmp = body.Invoke(std::forward<Args>(Args(args))...);
 				p = p->fNext;     // get next
 
 				for (; p != end && !static_cast<connection_body_type*>(p)->fConnected; p = p->fNext) {}
@@ -580,7 +581,7 @@ namespace tiss {
 				if (body.fConnected) {
 					details::auto_lock<Return, Args...> auto_lock(body);  //prevent unlink from list
 																		  // impossible inline
-					handler(body.Invoke(std::forward<Args>(args)...));
+					handler(body.Invoke(std::forward<Args>(Args(args))...));
 					p = p->fNext;
 				}
 
