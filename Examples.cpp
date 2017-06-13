@@ -1,4 +1,5 @@
 #include "tiss.h"
+#include <stdio.h>
 
 
 struct Com {

@@ -570,7 +570,7 @@ namespace tiss {
 
 		template<class ResultHanler, class = decltype(std::declval<ResultHanler&>()(std::declval<Return>())) >
 		void operator()(Args... args,
-				ResultHanler &handler) const
+				ResultHanler&& handler) const
 		{
 			auto *end = &fConnectionBodies;
 			for (auto p = fConnectionBodies.fNext; p != end; )
