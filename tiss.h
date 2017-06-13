@@ -577,7 +577,7 @@ namespace tiss {
 		
 
 		template<class = std::enable_if_t< !std::is_same<Return, void>::value, void>>
-		bool invoke_and_get_last_result(Args... args,
+		bool emit_and_get_last_result(Args... args,
 				std::conditional_t<std::is_same<Return, void>::value, int, Return> &last) const
 		{
 			auto const *end = &fConnectionBodies;
@@ -624,7 +624,7 @@ namespace tiss {
 			}
 		}
 
-		result_range<Signature> invoke_and_get_range(Args... args) const
+		result_range<Signature> emit_and_get_range(Args... args) const
 		{
 			auto p = fConnectionBodies.fNext;
 			auto end = &fConnectionBodies;

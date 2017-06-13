@@ -99,7 +99,7 @@ void example_get_result()
 	s(a);
 
 	int b;
-	s.invoke_and_get_last_result(a, b);
+	s.emit_and_get_last_result(a, b);
 	printf("last result %d\n", b);
 
 	int i = 0;
@@ -109,7 +109,7 @@ void example_get_result()
 	});
 
 	i = 0;
-	for (auto b : s.invoke_and_get_range(a)) {
+	for (auto b : s.emit_and_get_range(a)) {
 		printf("%dth result %d\n", i, b);
 		++i;
 	}

@@ -115,7 +115,7 @@ void test_invoke2()
 		auto sum = 0;
 		for (int i = 0; i < 10000000; ++i) {
 			int a;
-			auto rng = signal.invoke_and_get_range(i, a);
+			auto rng = signal.emit_and_get_range(i, a);
 			tiss::_Get_Tuple<void(int, int&)>::type;
 			auto b = rng.begin();
 			auto e = rng.end();
@@ -221,7 +221,7 @@ void test_invoke10()
 		auto sum = 0;
 		for (int i = 0; i < 10000000; ++i) {
 			int a;
-			auto rng = signal.invoke_and_get_range(i, a);
+			auto rng = signal.emit_and_get_range(i, a);
 			tiss::_Get_Tuple<void(int, int&)>::type;
 			auto b = rng.begin();
 			auto e = rng.end();
@@ -300,7 +300,7 @@ void test_heavy_invoke()
 		signal.connect([](std::string const &str) { return str; });
 		std::string str = "123456789012345678901234567890";
 		for (int i = 0; i < 10000000; ++i) {
-			for(auto &&str : signal.invoke_and_get_range(str)) { }
+			for(auto &&str : signal.emit_and_get_range(str)) { }
 		}
 
 		auto t1 = cr::high_resolution_clock::now();
