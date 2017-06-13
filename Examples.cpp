@@ -151,10 +151,19 @@ void example_safe_forward2()
 		printf("connection1\n");
 		return 0;
 	});
-	s.connect([&](Object str) {
+	s.connect([&](Object const &str) {
 		printf("connection2\n");
 		return 0;
 	});
+	s.connect([&](Object str) {
+		printf("connection3\n");
+		return 0;
+	});
+
+	auto x = [](Object str) {
+		printf("connection2\n");
+		return 0;
+	};
 
 	s(Object());
 }
@@ -165,5 +174,10 @@ int main() {
 	example_get_result();
 	example_safe_forward();
 	example_safe_forward2();
+	static_assert(std::is_same<tiss::details::copy_forward_type<int&>, int &>::value, "");
+	static_assert(std::is_same<tiss::details::copy_forward_type<int>, int const &>::value, "");
+	static_assert(std::is_same<tiss::details::copy_forward_type<int &&>, int &&>::value, "");
+	static_assert(std::is_lvalue_reference<int const &>::value, "");
+
 }
 

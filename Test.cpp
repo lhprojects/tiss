@@ -399,6 +399,5 @@ int main()
 	test_heavy_invoke();
 	test_connect();
 	test_heavy_lambda_connect();
-
 	return 0;
 }

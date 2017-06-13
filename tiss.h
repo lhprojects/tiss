@@ -30,6 +30,39 @@ namespace tiss {
 
 			bool empty() { return fPrev == this; }
 		};
+
+		template<class T>
+		struct copy_forward_type_impl {
+			using type = T const &;
+			static type forward(T const & v) { return v; }
+		};
+
+		template<class T>
+		struct copy_forward_type_impl<T &&> {
+			using type = T&&;
+			static type forward(T && v) { return v; }
+		};
+
+		template<class T>
+		struct copy_forward_type_impl<T &> {
+			using type = T&;
+			static type forward(T & v) { return v; }
+		};
+
+		template<class T>
+		using copy_forward_type = typename copy_forward_type_impl<T>::type;
+		
+		template<class T>
+		std::enable_if_t< !std::is_reference<T>::value, T const &>
+		copy_forward(T const &v) {
+			return v;
+		}
+
+		template<class T>
+		std::enable_if_t< std::is_reference<T>::value, T>
+			copy_forward(T v) {
+			return v;
+		}
 	}
 
 	class connection_body_vptr
@@ -128,7 +161,7 @@ namespace tiss {
 	public:
 		using connection_body_type = connection_body<connection_body<Return, Args...> >;
 
-		virtual Return Invoke(Args&&... args) = 0;
+		virtual Return Invoke( details::copy_forward_type<Args> ... args) = 0;
 
 	};
 
@@ -173,10 +206,10 @@ namespace tiss {
 		}
 
 
-		Return Invoke(Args&&... args) override final
+		Return Invoke(details::copy_forward_type<Args> ... args) override final
 		{
 			// inline only if the fFunc(...) is a tiny function
-			return fFuncStore(std::forward<Args>(args)...);
+			return fFuncStore(details::copy_forward<Args>(args)...);
 		}
 
 		void Destroy() override final
@@ -333,7 +366,7 @@ namespace tiss {
 		Result _Invoke(_Body &body, _Tuple *args, std::index_sequence<I>...) const
 		{
 			// make a copy and invoke
-			return body.Invoke(std::forward<Args>(std::get<I>(_Tuple(*args))...)...);
+			return body.Invoke(details::copy_forward<Args>(std::get<I>(*args)...)...);
 		}
 
 		Result operator*() const
@@ -443,7 +476,8 @@ namespace tiss {
 		template<class Func>
 		std::enable_if_t<
 			std::is_convertible<
-			    decltype(std::declval<Func>()(std::declval<Args>()...)),
+			    decltype(std::declval<Func>()
+			(std::declval<details::copy_forward_type<Args> >()...)),
 			    Return
 			>::value,
 			connection_type> connect(Func&& func)
@@ -458,7 +492,8 @@ namespace tiss {
 		template<class Obj, class... Args1>
 		std::enable_if_t<
 			std::is_convertible<
-			    decltype(std::declval<Obj>()(std::declval<Args>()...)),
+			    decltype(std::declval<Obj>()
+			        (std::declval<details::copy_forward_type<Args> >()...)),
 			    Return
 			>::value,
 			connection_type> connect_emplace(Args1&&... args)
@@ -476,7 +511,8 @@ namespace tiss {
 		auto connect_bind(Func1&& func, Args1&&... args)
 			-> std::enable_if_t<
 			std::is_convertible<
-			decltype(std::bind(std::forward<Func1>(func), std::forward<Args1>(args)...)(std::declval<Args>()...)),
+			decltype(std::bind(std::forward<Func1>(func), std::forward<Args1>(args)...)
+			    (std::declval<details::copy_forward_type<Args> >()...)),
 			Return
 			>::value,
 			connection_type>
@@ -532,7 +568,7 @@ namespace tiss {
 					details::auto_lock<Return, Args...> auto_lock(body);  //prevent unlink from list
 																		  // impossible inline
 					// copy before you forward
-					body.Invoke(std::forward<Args>(Args(args))...);
+					body.Invoke(details::copy_forward<Args>(args)...);
 					p = p->fNext;
 				}
 
@@ -555,7 +591,7 @@ namespace tiss {
 				connection_body_type &body = static_cast<connection_body_type &>(*p);
 
 				details::auto_lock<Return, Args...> auto_lock(body); //prevent unlink from list
-				auto tmp = body.Invoke(std::forward<Args>(Args(args))...);
+				auto tmp = body.Invoke(details::copy_forward<Args>(args)...);
 				p = p->fNext;     // get next
 
 				for (; p != end && !static_cast<connection_body_type*>(p)->fConnected; p = p->fNext) {}
@@ -568,7 +604,7 @@ namespace tiss {
 		}
 
 
-		template<class ResultHanler, class = decltype(std::declval<ResultHanler&>()(std::declval<Return>())) >
+		template<class ResultHanler, class = decltype(std::declval<ResultHanler&&>()(std::declval<Return>())) >
 		void operator()(Args... args,
 				ResultHanler&& handler) const
 		{
@@ -581,7 +617,7 @@ namespace tiss {
 				if (body.fConnected) {
 					details::auto_lock<Return, Args...> auto_lock(body);  //prevent unlink from list
 																		  // impossible inline
-					handler(body.Invoke(std::forward<Args>(Args(args))...));
+					handler(body.Invoke(details::copy_forward<Args>(args)...));
 					p = p->fNext;
 				}
 
