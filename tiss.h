@@ -521,7 +521,11 @@ namespace tiss {
 			return ptr;
 		}
 
-		template<class T>
+		// we don't support static function binding, like
+		// template <class T, Return(T::*funcptr)(Args...)>
+		// connection connect_funcptr(T *obj)
+		// we don't do optimization for corner case
+		template<class T> 
 		connection connect_funcptr(T *obj, Return(T::*funcptr)(Args...))
 		{
 			auto stub = [obj, funcptr](details::copy_forward_type<Args>... args)
