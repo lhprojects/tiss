@@ -19,6 +19,7 @@ void test_invoke()
 	namespace cr = std::chrono;
 
 	{
+		printf("boost.signal2: ");
 		auto t0 = cr::high_resolution_clock::now();
 
 		boost::signals2::signal<void(int, int&)> signal;
@@ -34,6 +35,7 @@ void test_invoke()
 		std::cout << cr::duration_cast<cr::milliseconds>(t1 - t0).count() << std::endl;
 	}
 	{
+		printf("tiss.signal.connect(foo): ");
 		auto t0 = cr::high_resolution_clock::now();
 
 		tiss::signal<void(int, int&)> signal;
@@ -49,6 +51,23 @@ void test_invoke()
 		std::cout << cr::duration_cast<cr::milliseconds>(t1 - t0).count() << std::endl;
 	}
 	{
+		printf("tiss.signal.connect([](){ foo(); }): ");
+		auto t0 = cr::high_resolution_clock::now();
+
+		tiss::signal<void(int, int&)> signal;
+		signal.connect([](int a, int& b) { return foo(a, b); });
+		auto sum = 0;
+		for (int i = 0; i < 10000000; ++i) {
+			int a;
+			signal(i, a);
+			sum += a;
+		}
+
+		auto t1 = cr::high_resolution_clock::now();
+		std::cout << cr::duration_cast<cr::milliseconds>(t1 - t0).count() << std::endl;
+	}
+	{
+		printf("foo(): ");
 		auto t0 = cr::high_resolution_clock::now();
 
 		auto sum = 0;
