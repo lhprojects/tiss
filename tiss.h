@@ -184,6 +184,7 @@ namespace tiss {
 		};
 
 		connection_body_derived() { }
+		~connection_body_derived() { }
 
 
 		template<class... Args1>
@@ -199,10 +200,6 @@ namespace tiss {
 
 			new((void*)&fFuncStore) FuncStorage(
 				std::bind(std::forward<Func1>(func), std::forward<Args1>(args)...));
-		}
-
-		~connection_body_derived()
-		{
 		}
 
 
@@ -496,7 +493,7 @@ namespace tiss {
 			        (std::declval<details::copy_forward_type<Args> >()...)),
 			    Return
 			>::value,
-			connection_type> connect_emplace(Args1&&... args)
+			connection> connect_emplace(Args1&&... args)
 		{
 			using Binder = Obj;
 			connection_body_derived<Binder, Return, Args...> *ptr = new connection_body_derived<Binder, Return, Args...>();
@@ -515,12 +512,63 @@ namespace tiss {
 			    (std::declval<details::copy_forward_type<Args> >()...)),
 			Return
 			>::value,
-			connection_type>
+			connection>
 		{
-			// all things expaned! good!
 			using Binder = decltype(std::bind(std::forward<Func1>(func), std::forward<Args1>(args)...));
 			connection_body_derived<Binder, Return, Args...> *ptr = new connection_body_derived<Binder, Return, Args...>();
 			ptr->initialize_bind(std::forward<Func1>(func), std::forward<Args1>(args)...);
+			fConnectionBodies.push_back(ptr);
+			return ptr;
+		}
+
+		template<class T>
+		connection connect_funcptr(T *obj, Return(T::*funcptr)(Args...))
+		{
+			auto stub = [obj, funcptr](details::copy_forward_type<Args>... args)
+			{
+				return (obj->*funcptr)(details::copy_forward<Args>(args)...);
+			};
+			using Binder = decltype(stub);
+			connection_body_derived<Binder, Return, Args...> *ptr = new connection_body_derived<Binder, Return, Args...>();
+			ptr->initialize(stub);
+			fConnectionBodies.push_back(ptr);
+			return ptr;
+		}
+
+		template<class T>
+		connection connect_funcptr(T *obj, Return(T::*funcptr)(Args...) const)
+		{
+			auto stub = [obj, funcptr](details::copy_forward_type<Args>... args)
+			{
+				return (obj->*funcptr)(details::copy_forward<Args>(args)...);
+			};
+			using Binder = decltype(stub);
+			connection_body_derived<Binder, Return, Args...> *ptr = new connection_body_derived<Binder, Return, Args...>();
+			ptr->initialize(stub);
+			fConnectionBodies.push_back(ptr);
+			return ptr;
+		}
+
+		template<class T>
+		connection connect_funcptr(T const *obj, Return(T::*funcptr)(Args...) const)
+		{
+			auto stub = [obj, funcptr](details::copy_forward_type<Args>... args)
+			{
+				return (obj->*funcptr)(details::copy_forward<Args>(args)...);
+			};
+			using Binder = decltype(stub);
+			connection_body_derived<Binder, Return, Args...> *ptr = new connection_body_derived<Binder, Return, Args...>();
+			ptr->initialize(stub);
+			fConnectionBodies.push_back(ptr);
+			return ptr;
+		}
+
+		connection connect_funcptr(Return(*funcptr)(Args...))
+		{
+			// all things expaned! good!
+			using Binder = Return(*)(Args...);
+			connection_body_derived<Binder, Return, Args...> *ptr = new connection_body_derived<Binder, Return, Args...>();
+			ptr->initialize(funcptr);
 			fConnectionBodies.push_back(ptr);
 			return ptr;
 		}

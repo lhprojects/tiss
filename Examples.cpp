@@ -5,7 +5,24 @@
 struct Com {
 
 	Com(int a) { }
+	Com() { }
+
 	int operator()(int &x) {
+		printf("functor ");
+		printf("x: %d -> %d\n", x, x + 1);
+		x += 1;
+		return 1;
+	}
+
+	int foo(int &x) {
+		printf("member function! ");
+		printf("x: %d -> %d\n", x, x + 1);
+		x += 1;
+		return 1;
+	}
+
+	int bar(int &x) const {
+		printf("member const function! ");
 		printf("x: %d -> %d\n", x, x + 1);
 		x += 1;
 		return 1;
@@ -18,32 +35,47 @@ void example_connect()
 	using namespace std::placeholders;
 	tiss::signal<int(int&)> s;
 
-
-	// so move/copy constructor in needed in this version
-	// only one move/coy construction will be perform
+	// the functor will be moved/copied to the internal space
 	s.connect([&](int &x) {
-
+		printf("lambda: ");
 		printf("x: %d -> %d\n", x, x + 1);
 		x += 1;
 
-		// equivalent to s.connect(std::bind([&](int const &, int &x) { ... }, 1, std::placeholders::_1))
-		// but the return results of std::bind will constructed inplace the connection body
-		// so move/copy constructor in not needed in this version
-		s.connect_bind([&](int const &, int &x) {
-			printf("x: %d -> %d\n", x, x + 1);
-			x += 1;
-
-			// same as s.connect(Com(1))
-			// but Com will constructed inplace the connection body
-			// so move/copy constructor in not needed in this version
-			s.connect_emplace<Com>(1);
-
-			return 1;
-		}, 1, std::placeholders::_1);
-
-
 		return 1;
 	});
+
+	// equivalent to s.connect(std::bind([&](int const &, int &x) { ... }, 1, std::placeholders::_1))
+	// but the return results of std::bind will constructed inplace the connection body
+	// so move/copy constructor in not needed in this version
+	s.connect_bind([&](int const &, int &x) {
+		printf("binder: ");
+		printf("x: %d -> %d\n", x, x + 1);
+		x += 1;
+
+		// same as s.connect(Com(1))
+		// but Com will constructed inplace the connection body
+		// so move/copy constructor in not needed in this version
+
+		// connecting a new slot, while another slot is running, is OK.
+		s.connect_emplace<Com>(1);
+
+		return 1;
+	}, 1, std::placeholders::_1);
+
+	int(*ptr)(int &) = [](int &x) {
+		printf("free function: ");
+		printf("x: %d -> %d\n", x, x + 1);
+		x += 1;
+
+		return 1;
+	};
+	s.connect_funcptr(ptr);
+	Com com;
+	Com const constCom;
+	s.connect_funcptr(&com, &Com::foo);
+	s.connect_funcptr(&com, &Com::bar);
+	s.connect_funcptr(&constCom, &Com::bar);
+	// s.connect_funcptr(&constCom, &Com::foo);
 
 	int a = 0;
 	s(a);
