@@ -149,6 +149,26 @@ void example_get_result()
 }
 
 
+void example_emit_util_false() {
+	tiss::signal<bool()> s;
+	s.connect([]() -> int {
+		printf("this is connection 1, return 1\n");
+		return 1;
+	});
+	s.connect([]() {
+		printf("this is connection 2, return false\n");
+		return false;
+	});
+	s.connect([]() {
+		printf("this is connection 3, return true\n");
+		return true;
+	});
+	printf("example_emit_util_false\n");
+	s.emit_util_false();
+	printf("example_emit_util_true\n");
+	s.emit_util_true();
+}
+
 struct Object {
 	Object() { printf("default cotr\n"); }
 	Object(Object const &o) { printf("copy cotr\n"); }
@@ -161,6 +181,7 @@ struct Object {
 
 void example_safe_forward()
 {
+	printf("example_safe_forward\n");
 	tiss::signal<int(std::string)> s;
 
 	s.connect([&](std::string str) {
@@ -177,26 +198,21 @@ void example_safe_forward()
 
 void example_safe_forward2()
 {
+	printf("example_safe_forward2\n");
 	tiss::signal<int(Object)> s;
 
 	s.connect([&](Object obj) {
-		printf("connection1\n");
+		printf("this is connection1\n");
 		return 0;
 	});
-	s.connect([&](Object const &str) {
-		printf("connection2\n");
+	s.connect([&](Object const &obj) {
+		printf("this is connection2\n");
 		return 0;
 	});
-	s.connect([&](Object str) {
-		printf("connection3\n");
+	s.connect([&](Object obj) {
+		printf("this is connection3\n");
 		return 0;
 	});
-
-	auto x = [](Object str) {
-		printf("connection2\n");
-		return 0;
-	};
-
 	s(Object());
 }
 
@@ -204,6 +220,7 @@ int main() {
 	example_connect();
 	example_disconnect();
 	example_get_result();
+	example_emit_util_false();
 	example_safe_forward();
 	example_safe_forward2();
 	static_assert(std::is_same<tiss::details::copy_forward_type<int&>, int &>::value, "");

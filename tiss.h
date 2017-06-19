@@ -655,6 +655,58 @@ namespace tiss {
 			}
 		}
 
+		template<class = 
+			std::enable_if_t< 
+			    std::is_convertible<Return, bool>::value
+		    >
+		>
+		bool emit_util_false(Args... args) const
+		{
+			auto *end = &fConnectionBodies;
+			for (auto p = fConnectionBodies.fNext; p != end; )
+			{
+				// down cast
+				connection_body_type &body = static_cast<connection_body_type &>(*p);
+
+				if (body.fConnected) {
+					details::auto_lock<Return, Args...> auto_lock(body);  //prevent unlink from list
+																		  // impossible inline
+																		  // copy before you forward
+					bool v = body.Invoke(details::copy_forward<Args>(args)...);
+					if (v == false) return false;
+					p = p->fNext;
+				}
+
+			}
+			return true;
+		}
+
+		template<class =
+			std::enable_if_t<
+			std::is_convertible<Return, bool>::value
+			>
+		>
+			bool emit_util_true(Args... args) const
+		{
+			auto *end = &fConnectionBodies;
+			for (auto p = fConnectionBodies.fNext; p != end; )
+			{
+				// down cast
+				connection_body_type &body = static_cast<connection_body_type &>(*p);
+
+				if (body.fConnected) {
+					details::auto_lock<Return, Args...> auto_lock(body);  //prevent unlink from list
+																		  // impossible inline
+																		  // copy before you forward
+					bool v = body.Invoke(details::copy_forward<Args>(args)...);
+					if (v == true) return false;
+					p = p->fNext;
+				}
+
+			}
+			return true;
+		}
+
 
 		template<class ResultHanler, class = decltype(std::declval<ResultHanler&&>()(std::declval<Return>())) >
 		void operator()(Args... args,
